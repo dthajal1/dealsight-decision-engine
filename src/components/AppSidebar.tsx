@@ -1,6 +1,7 @@
-import { LayoutDashboard, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, Plus, Settings, CheckCircle2, AlertTriangle, XCircle, Loader2, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { mockDeals } from "@/data/mockDeals";
 import {
   Sidebar,
   SidebarContent,
@@ -14,9 +15,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navItems = [
-  { title: "Deals", url: "/", icon: LayoutDashboard },
-];
+const verdictDot: Record<string, string> = {
+  strong: "bg-verdict-positive",
+  caution: "bg-verdict-caution",
+  pass: "bg-verdict-negative",
+};
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -38,20 +41,51 @@ export function AppSidebar() {
           )}
         </div>
 
+        {/* Nav */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/"
+                    end
+                    className="hover:bg-sidebar-accent/50"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                  >
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>Overview</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Deals list */}
+        <SidebarGroup>
+          {!collapsed && <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">Deals</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mockDeals.map((deal) => (
+                <SidebarMenuItem key={deal.id}>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to={item.url}
-                      end
+                      to={`/deal/${deal.id}`}
                       className="hover:bg-sidebar-accent/50"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {/* Verdict dot */}
+                      <span className={`shrink-0 w-2 h-2 rounded-full mr-2 ${
+                        deal.verdict
+                          ? verdictDot[deal.verdict]
+                          : deal.status === "analyzing"
+                          ? "bg-muted-foreground animate-pulse"
+                          : "bg-border"
+                      }`} />
+                      {!collapsed && (
+                        <span className="truncate text-sm">{deal.name}</span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
