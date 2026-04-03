@@ -8,6 +8,7 @@ import { FinancialScreenPreview } from "@/components/deal/FinancialScreenPreview
 import { LOIBuilderPreview } from "@/components/deal/LOIBuilderPreview";
 import { DiligencePreview } from "@/components/deal/DiligencePreview";
 import { CloseReviewPreview } from "@/components/deal/CloseReviewPreview";
+import { ChatWidget } from "@/components/ChatWidget";
 import { ArrowLeft } from "lucide-react";
 
 const DealPage = () => {
@@ -26,7 +27,7 @@ const DealPage = () => {
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-4">Deal not found</p>
           <button onClick={() => navigate("/")} className="text-sm text-primary underline">
-            Back to pipeline
+            Back to overview
           </button>
         </div>
       </div>
@@ -42,7 +43,7 @@ const DealPage = () => {
   ];
 
   return (
-    <div className="bg-background">
+    <div className="bg-background min-h-screen">
       <div className="max-w-4xl mx-auto px-6 py-6">
         <div className="flex items-center gap-3 mb-4">
           <button
@@ -63,6 +64,9 @@ const DealPage = () => {
         </div>
         {stepContent[activeStep]}
       </div>
+
+      {/* Floating AI Chat */}
+      <ChatWidget />
     </div>
   );
 };
