@@ -112,32 +112,21 @@ export function AppSidebar() {
         </div>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <button className="text-muted-foreground hover:text-sidebar-foreground">
-                <Settings className="mr-2 h-4 w-4" />
-                {!collapsed && <span className="text-[13px]">Settings</span>}
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <div className="flex items-center gap-2.5 cursor-pointer">
-                <div className="w-6 h-6 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
-                  <User className="w-3 h-3 text-muted-foreground" />
-                </div>
-                {!collapsed && (
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-sidebar-foreground truncate leading-tight">Demo User</p>
-                    <p className="text-[11px] text-muted-foreground truncate leading-tight">demo@dealsight.ai</p>
-                  </div>
-                )}
+      <SidebarFooter className="border-t border-sidebar-border p-2">
+        <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"} rounded-md px-2 py-1.5 hover:bg-sidebar-accent transition-colors cursor-pointer`}>
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-border flex items-center justify-center shrink-0">
+            <span className="text-[11px] font-semibold text-primary">DU</span>
+          </div>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-sidebar-foreground truncate leading-tight">Demo User</p>
+                <p className="text-[11px] text-muted-foreground truncate leading-tight">demo@dealsight.ai</p>
               </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </>
+          )}
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
