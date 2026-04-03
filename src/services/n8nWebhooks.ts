@@ -1,5 +1,4 @@
 // n8n Webhook integration service
-// Each step posts to a different webhook URL and returns structured JSON
 
 const WEBHOOK_BASE = "https://kamayani17.app.n8n.cloud/webhook";
 const TIMEOUT_MS = 30_000;
@@ -20,37 +19,26 @@ export class WebhookTimeoutError extends Error {
   }
 }
 
-function extractJsonFromResponse(raw: string): unknown {
-  let cleaned = raw
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/g, "")
-    .trim();
-
-  const jsonStart = cleaned.search(/[\{\[]/);
-  if (jsonStart === -1) throw new Error("No JSON found in response");
-
-  const opener = cleaned[jsonStart];
-  const closer = opener === "[" ? "]" : "}";
-  const jsonEnd = cleaned.lastIndexOf(closer);
-  if (jsonEnd === -1) throw new Error("Incomplete JSON in response");
-
-  cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    // fix trailing commas & control chars
-    cleaned = cleaned
-      .replace(/,\s*}/g, "}")
-      .replace(/,\s*]/g, "]")
-      .replace(/[\x00-\x1F\x7F]/g, "");
-    return JSON.parse(cleaned);
-  }
+/** Read a File as base64 (strips the data:…;base64, prefix) */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1];
+      console.log("[n8n] File converted to base64, length:", base64.length);
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
 }
 
 async function postWebhook<T = any>(url: string, body: Record<string, any>): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  console.log("[n8n] POST →", url);
 
   try {
     const resp = await fetch(url, {
@@ -60,39 +48,32 @@ async function postWebhook<T = any>(url: string, body: Record<string, any>): Pro
       signal: controller.signal,
     });
 
-    const rawText = await resp.text();
+    console.log("[n8n] Response status:", resp.status);
+
+    // Read as text first
+    const text = await resp.text();
+    console.log("[n8n] Raw response length:", text.length);
+    console.log("[n8n] Raw response preview:", text.slice(0, 300));
 
     if (!resp.ok) {
-      throw new Error(`Webhook returned ${resp.status}: ${rawText.slice(0, 200)}`);
+      throw new Error(`Request failed: ${resp.status} - ${text.slice(0, 200)}`);
     }
 
-    if (!rawText || rawText.trim() === "") {
-      throw new Error("Webhook returned an empty response. Check your n8n workflow output.");
+    if (!text || text.trim() === "") {
+      throw new Error("Webhook returned an empty response. Check your n8n workflow.");
     }
 
-    console.log("[n8n] Raw response length:", rawText.length, "Preview:", rawText.slice(0, 200));
-
-    return extractJsonFromResponse(rawText) as T;
+    // Parse the JSON directly — n8n returns valid JSON
+    const data = JSON.parse(text);
+    console.log("[n8n] Parsed data:", data);
+    return data as T;
   } catch (e: any) {
     if (e.name === "AbortError") throw new WebhookTimeoutError();
+    console.error("[n8n] Error:", e.message);
     throw e;
   } finally {
     clearTimeout(timer);
   }
-}
-
-/** Read a File as base64 (strips the data:…;base64, prefix) */
-export function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1];
-      resolve(base64);
-    };
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsDataURL(file);
-  });
 }
 
 // ── Step 1: CIM Analysis ──
