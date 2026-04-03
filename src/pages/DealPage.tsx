@@ -9,7 +9,6 @@ import { LOIBuilderPreview } from "@/components/deal/LOIBuilderPreview";
 import { DiligencePreview } from "@/components/deal/DiligencePreview";
 import { CloseReviewPreview } from "@/components/deal/CloseReviewPreview";
 import { ChatWidget } from "@/components/ChatWidget";
-import { ArrowLeft } from "lucide-react";
 
 const DealPage = () => {
   const { id } = useParams();
