@@ -24,6 +24,7 @@ export interface Deal {
   yearEstablished?: number;
   nextSteps?: string[];
   analysisStep?: number;
+  cimFilePath?: string;
 }
 
 export interface ChatMessage {
