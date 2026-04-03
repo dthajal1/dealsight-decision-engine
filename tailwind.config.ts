@@ -47,6 +47,19 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          "0": "hsl(var(--surface-0))",
+          "1": "hsl(var(--surface-1))",
+          "2": "hsl(var(--surface-2))",
+        },
+        verdict: {
+          positive: "hsl(var(--verdict-positive))",
+          "positive-bg": "hsl(var(--verdict-positive-bg))",
+          caution: "hsl(var(--verdict-caution))",
+          "caution-bg": "hsl(var(--verdict-caution-bg))",
+          negative: "hsl(var(--verdict-negative))",
+          "negative-bg": "hsl(var(--verdict-negative-bg))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
