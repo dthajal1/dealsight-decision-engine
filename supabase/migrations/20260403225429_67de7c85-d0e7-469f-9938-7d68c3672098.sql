@@ -1,0 +1,1 @@
+DELETE FROM public.deals WHERE id IN ('d6964337-1369-4b0d-89d5-9bd30a2331a0', 'df264374-d1c9-4b64-a1f3-3273319a5e92', '640ddcb2-da84-49c4-ba31-8df8d493ddbb');
