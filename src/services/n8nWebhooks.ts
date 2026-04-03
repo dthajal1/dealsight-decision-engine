@@ -20,6 +20,34 @@ export class WebhookTimeoutError extends Error {
   }
 }
 
+function extractJsonFromResponse(raw: string): unknown {
+  let cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  const jsonStart = cleaned.search(/[\{\[]/);
+  if (jsonStart === -1) throw new Error("No JSON found in response");
+
+  const opener = cleaned[jsonStart];
+  const closer = opener === "[" ? "]" : "}";
+  const jsonEnd = cleaned.lastIndexOf(closer);
+  if (jsonEnd === -1) throw new Error("Incomplete JSON in response");
+
+  cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // fix trailing commas & control chars
+    cleaned = cleaned
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x1F\x7F]/g, "");
+    return JSON.parse(cleaned);
+  }
+}
+
 async function postWebhook<T = any>(url: string, body: Record<string, any>): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -32,12 +60,19 @@ async function postWebhook<T = any>(url: string, body: Record<string, any>): Pro
       signal: controller.signal,
     });
 
+    const rawText = await resp.text();
+
     if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      throw new Error(`Webhook returned ${resp.status}: ${text}`);
+      throw new Error(`Webhook returned ${resp.status}: ${rawText.slice(0, 200)}`);
     }
 
-    return await resp.json();
+    if (!rawText || rawText.trim() === "") {
+      throw new Error("Webhook returned an empty response. Check your n8n workflow output.");
+    }
+
+    console.log("[n8n] Raw response length:", rawText.length, "Preview:", rawText.slice(0, 200));
+
+    return extractJsonFromResponse(rawText) as T;
   } catch (e: any) {
     if (e.name === "AbortError") throw new WebhookTimeoutError();
     throw e;
