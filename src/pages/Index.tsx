@@ -16,16 +16,17 @@ const Index = () => {
   const cautionCount = deals.filter((d) => d.verdict === "caution").length;
   const passCount = deals.filter((d) => d.verdict === "pass").length;
   const analyzingCount = deals.filter((d) => d.status === "analyzing").length;
-  const pendingCount = deals.filter((d) => d.status === "new").length;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Page title + action */}
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">DealSight</h1>
-            <p className="text-xs text-muted-foreground">AI-powered deal analysis</p>
+            <h1 className="text-lg font-semibold text-foreground">Deals</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {totalDeals} deal{totalDeals !== 1 ? "s" : ""} in pipeline
+            </p>
           </div>
           <button
             onClick={() => navigate("/deal/new")}
@@ -35,9 +36,7 @@ const Index = () => {
             New Deal
           </button>
         </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
         {isEmpty ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -61,17 +60,12 @@ const Index = () => {
           </motion.div>
         ) : (
           <>
-            {/* Summary Stats Bar */}
+            {/* Summary Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-6 mb-8 text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-5 mb-6 text-xs"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Deals</span>
-                <span className="font-semibold text-foreground">{totalDeals}</span>
-              </div>
-              <div className="w-px h-4 bg-border" />
               {strongCount > 0 && (
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-verdict-positive" />
@@ -96,23 +90,17 @@ const Index = () => {
                   <span className="text-muted-foreground">{analyzingCount} Analyzing</span>
                 </div>
               )}
-              {pendingCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-border" />
-                  <span className="text-muted-foreground">{pendingCount} Pending</span>
-                </div>
-              )}
             </motion.div>
 
-            {/* Card Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Deal List */}
+            <div className="rounded-xl border bg-card overflow-hidden">
               {deals.map((deal, i) => (
                 <DealCard key={deal.id} deal={deal} index={i} />
               ))}
             </div>
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 };
