@@ -62,32 +62,47 @@ function Section({ title, delay = 0, children }: { title: string; delay?: number
 
 // ── Upload Form ──
 
+function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
 function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; onError: (err: string) => void }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [askingPrice, setAskingPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const addFiles = (newFiles: FileList | File[]) => {
+    const arr = Array.from(newFiles).filter(f => f.name.endsWith(".csv"));
+    if (arr.length === 0) { toast.error("Only .csv files are accepted"); return; }
+    setFiles(prev => [...prev, ...arr]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
-    if (!file || !askingPrice) {
-      toast.error("Please provide both a CSV file and asking price");
+    if (files.length === 0 || !askingPrice) {
+      toast.error("Please provide at least one CSV file and asking price");
       return;
     }
 
     setLoading(true);
     try {
-      // Read CSV as text
-      const csvText = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsText(file);
-      });
+      const csvTexts = await Promise.all(files.map(readFileAsText));
+      const combinedCsv = csvTexts.join("\n");
 
-      console.log("[QoE] CSV length:", csvText.length);
+      console.log("[QoE] Files:", files.map(f => f.name));
+      console.log("[QoE] Combined CSV length:", combinedCsv.length);
       console.log("[QoE] Asking price:", askingPrice);
 
       const formData = new FormData();
-      formData.append("csvData", csvText);
+      formData.append("csvData", combinedCsv);
       formData.append("askingPrice", askingPrice);
 
       const resp = await fetch(QOE_WEBHOOK, {
