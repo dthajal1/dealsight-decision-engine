@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, Plus, Settings, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useDeals } from "@/hooks/useDeals";
@@ -116,6 +116,21 @@ export function AppSidebar() {
                 <Settings className="mr-2 h-4 w-4" />
                 {!collapsed && <span>Settings</span>}
               </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                {!collapsed && (
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-sidebar-foreground truncate">Demo User</p>
+                    <p className="text-[10px] text-muted-foreground truncate">demo@dealsight.ai</p>
+                  </div>
+                )}
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
