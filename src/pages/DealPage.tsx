@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDeal, useCreateDeal, uploadCIM } from "@/hooks/useDeals";
 import { StepNavigation } from "@/components/deal/StepNavigation";
-import { CIMAnalysis } from "@/components/deal/CIMAnalysis";
-import { FinancialScreenPreview } from "@/components/deal/FinancialScreenPreview";
-import { LOIBuilderPreview } from "@/components/deal/LOIBuilderPreview";
-import { DiligencePreview } from "@/components/deal/DiligencePreview";
-import { CloseReviewPreview } from "@/components/deal/CloseReviewPreview";
+import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
+import { GenericStepResults } from "@/components/deal/GenericStepResults";
+import { StepUploadZone } from "@/components/deal/StepUploadZone";
+import { analyzeCIM, analyzeNDA, analyzeFinancePacket, generateLOI, analyzeQoE, analyzeAgreement } from "@/services/n8nWebhooks";
+import { DEMO_CIM_RESPONSE } from "@/data/demoData";
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const stepLabels = ["CIM Analysis", "Financials", "LOI Builder", "Diligence", "Close"];
+
+// ── New Deal Form ──
 
 function NewDealForm() {
   const navigate = useNavigate();
@@ -38,7 +40,8 @@ function NewDealForm() {
         cimFilePath = await uploadCIM(file);
       }
       const deal = await createDeal.mutateAsync({ name, industry, location, cimFilePath });
-      navigate(`/deal/${deal.id}`);
+      // Navigate with the file in state so DealView can auto-analyze
+      navigate(`/deal/${deal.id}`, { state: { pendingFile: file ? true : false } });
     } catch (e: any) {
       toast.error(e.message || "Failed to create deal");
     }
@@ -108,7 +111,7 @@ function NewDealForm() {
                   input.click();
                 }}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  isDragging ? "border-primary bg-surface-1" : file ? "border-primary/50 bg-surface-1" : "border-border hover:border-muted-foreground hover:bg-surface-1"
+                  isDragging ? "border-primary bg-primary/5" : file ? "border-primary/50 bg-primary/5" : "border-border hover:border-muted-foreground hover:bg-muted/30"
                 }`}
               >
                 <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
@@ -158,16 +161,96 @@ function NewDealForm() {
   );
 }
 
-const DealPage = () => {
+// ── Step State Types ──
+
+interface StepState {
+  data: any | null;
+  loading: boolean;
+  error: string | null;
+  file: File | null;
+}
+
+const emptyStep = (): StepState => ({ data: null, loading: false, error: null, file: null });
+
+// ── Deal View (existing deal) ──
+
+function DealView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-
-  if (id === "new") {
-    return <NewDealForm />;
-  }
-
   const { data: deal, isLoading } = useDeal(id);
+
+  // Per-step state: [cim, financials/nda, loi, diligence/qoe, close/agreement]
+  const [steps, setSteps] = useState<StepState[]>([
+    emptyStep(), emptyStep(), emptyStep(), emptyStep(), emptyStep(),
+  ]);
+
+  // Shift+D demo mode
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === "D") {
+        setSteps((prev) => {
+          const next = [...prev];
+          next[0] = { data: DEMO_CIM_RESPONSE, loading: false, error: null, file: null };
+          return next;
+        });
+        toast.success("Demo data loaded for Step 1");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const updateStep = useCallback((index: number, patch: Partial<StepState>) => {
+    setSteps((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  }, []);
+
+  // Retry stores the last file used
+  const retryRef = useRef<{ step: number; file: File | null }>({ step: 0, file: null });
+
+  const handleStepUpload = useCallback(async (stepIndex: number, file: File, apiFn: (f: File) => Promise<any>) => {
+    retryRef.current = { step: stepIndex, file };
+    updateStep(stepIndex, { loading: true, error: null, file });
+    try {
+      const result = await apiFn(file);
+      updateStep(stepIndex, { data: result, loading: false });
+    } catch (e: any) {
+      updateStep(stepIndex, { loading: false, error: e.message || "Unknown error" });
+    }
+  }, [updateStep]);
+
+  const handleRetry = useCallback(() => {
+    const { step, file } = retryRef.current;
+    if (file) {
+      const fns = [analyzeCIM, analyzeNDA, analyzeFinancePacket, () => Promise.resolve(null), analyzeQoE, analyzeAgreement];
+      handleStepUpload(step, file, fns[step]);
+    }
+  }, [handleStepUpload]);
+
+  // Step 3 (LOI) auto-triggers when step1 data is available
+  const handleLOILoad = useCallback(async () => {
+    if (steps[2].data || steps[2].loading) return;
+    const step1Data = steps[0].data;
+    if (!step1Data) return;
+    updateStep(2, { loading: true, error: null });
+    try {
+      const result = await generateLOI(step1Data);
+      updateStep(2, { data: result, loading: false });
+    } catch (e: any) {
+      updateStep(2, { loading: false, error: e.message || "Unknown error" });
+    }
+  }, [steps, updateStep]);
+
+  // Auto-load LOI when navigating to step 3
+  useEffect(() => {
+    if (activeStep === 2 && steps[0].data && !steps[2].data && !steps[2].loading) {
+      handleLOILoad();
+    }
+  }, [activeStep, steps, handleLOILoad]);
 
   if (isLoading) {
     return (
@@ -190,13 +273,99 @@ const DealPage = () => {
     );
   }
 
-  const stepContent = [
-    <CIMAnalysis key="cim" deal={deal} />,
-    <FinancialScreenPreview key="fin" />,
-    <LOIBuilderPreview key="loi" deal={deal} />,
-    <DiligencePreview key="dd" deal={deal} />,
-    <CloseReviewPreview key="close" />,
-  ];
+  // Determine what to show per step
+  const renderStep = (index: number) => {
+    const s = steps[index];
+
+    switch (index) {
+      case 0: // CIM Analysis
+        if (s.data) return <CIMResultsDashboard data={s.data} />;
+        return (
+          <StepUploadZone
+            label="Upload CIM document"
+            description="Drag & drop a PDF or click to browse"
+            isLoading={s.loading}
+            error={s.error}
+            onUpload={(file) => handleStepUpload(0, file, analyzeCIM)}
+            onRetry={handleRetry}
+          />
+        );
+
+      case 1: // Financials / NDA
+        if (s.data) return <GenericStepResults data={s.data} title="Financial Screening Complete" />;
+        return (
+          <StepUploadZone
+            label="Upload NDA or Finance Packet"
+            description="PDF document for financial screening"
+            isLoading={s.loading}
+            error={s.error}
+            onUpload={(file) => handleStepUpload(1, file, analyzeNDA)}
+            onRetry={handleRetry}
+          />
+        );
+
+      case 2: // LOI Builder
+        if (s.data) return <GenericStepResults data={s.data} title="LOI Anchor Analysis" />;
+        if (s.loading) {
+          return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24">
+              <Loader2 className="w-6 h-6 animate-spin text-primary mb-4" />
+              <p className="text-sm font-medium text-foreground">Generating LOI anchor…</p>
+              <p className="text-xs text-muted-foreground">Using CIM analysis to calculate terms</p>
+            </motion.div>
+          );
+        }
+        if (s.error) {
+          return (
+            <StepUploadZone
+              label=""
+              description=""
+              isLoading={false}
+              error={s.error}
+              onUpload={() => {}}
+              onRetry={() => handleLOILoad()}
+            />
+          );
+        }
+        if (!steps[0].data) {
+          return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24">
+              <p className="text-sm text-muted-foreground">Complete CIM Analysis first to generate LOI anchor</p>
+            </motion.div>
+          );
+        }
+        return null;
+
+      case 3: // Diligence / QoE
+        if (s.data) return <GenericStepResults data={s.data} title="Quality of Earnings Analysis" />;
+        return (
+          <StepUploadZone
+            label="Upload QoE Report"
+            description="PDF document for diligence review"
+            isLoading={s.loading}
+            error={s.error}
+            onUpload={(file) => handleStepUpload(3, file, analyzeQoE)}
+            onRetry={handleRetry}
+          />
+        );
+
+      case 4: // Close / Agreement
+        if (s.data) return <GenericStepResults data={s.data} title="Agreement Review Complete" />;
+        return (
+          <StepUploadZone
+            label="Upload Purchase Agreement"
+            description="PDF document for closing review"
+            isLoading={s.loading}
+            error={s.error}
+            onUpload={(file) => handleStepUpload(4, file, analyzeAgreement)}
+            onRetry={handleRetry}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   const isFirst = activeStep === 0;
   const isLast = activeStep === stepLabels.length - 1;
@@ -210,10 +379,17 @@ const DealPage = () => {
             <p className="text-xs text-muted-foreground">{deal.industry} · {deal.location}</p>
           )}
         </div>
-        <div className="mb-6">
-          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={deal.status === "reviewed"} />
+
+        {/* Demo mode hint */}
+        <div className="mb-2">
+          <p className="text-[10px] text-muted-foreground/50">Press Shift+D to load demo data</p>
         </div>
-        {stepContent[activeStep]}
+
+        <div className="mb-6">
+          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={!!steps[0].data} />
+        </div>
+
+        {renderStep(activeStep)}
 
         <div className="flex items-center justify-between mt-10 pt-6 border-t border-border">
           {!isFirst ? (
@@ -240,6 +416,14 @@ const DealPage = () => {
       </div>
     </div>
   );
+}
+
+// ── Router Entry ──
+
+const DealPage = () => {
+  const { id } = useParams();
+  if (id === "new") return <NewDealForm />;
+  return <DealView />;
 };
 
 export default DealPage;
