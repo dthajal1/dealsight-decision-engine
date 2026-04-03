@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, Settings, User } from "lucide-react";
+import { LayoutDashboard, Plus, Settings, ChevronsUpDown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useDeals } from "@/hooks/useDeals";
