@@ -11,8 +11,6 @@ import { DEMO_FINANCIALS_RESPONSE, DEMO_LOI_RESPONSE, DEMO_CLOSE_RESPONSE } from
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
 
 const stepLabels = ["CIM Analysis", "Financials", "LOI Builder", "Diligence", "Close"];
 
