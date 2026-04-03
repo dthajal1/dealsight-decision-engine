@@ -352,17 +352,7 @@ function DealView() {
         return null;
 
       case 3: // Diligence / QoE
-        if (s.data) return <GenericStepResults data={s.data} title="Quality of Earnings Analysis" />;
-        return (
-          <StepUploadZone
-            label="Upload QoE Report"
-            description="PDF document for diligence review"
-            isLoading={s.loading}
-            error={s.error}
-            onUpload={(file) => handleStepUpload(3, file, analyzeQoE)}
-            onRetry={handleRetry}
-          />
-        );
+        return <QoEDashboard />;
 
       case 4: // Close / Agreement
         if (s.data) return <GenericStepResults data={s.data} title="Agreement Review Complete" />;
