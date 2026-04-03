@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockDeals } from "@/data/mockDeals";
-import { Deal } from "@/types/deal";
+import { useDeal, useCreateDeal, uploadCIM } from "@/hooks/useDeals";
 import { StepNavigation } from "@/components/deal/StepNavigation";
 import { CIMAnalysis } from "@/components/deal/CIMAnalysis";
 import { FinancialScreenPreview } from "@/components/deal/FinancialScreenPreview";
 import { LOIBuilderPreview } from "@/components/deal/LOIBuilderPreview";
 import { DiligencePreview } from "@/components/deal/DiligencePreview";
 import { CloseReviewPreview } from "@/components/deal/CloseReviewPreview";
-import { ArrowRight, ArrowLeft, Upload } from "lucide-react";
+import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const stepLabels = ["CIM Analysis", "Financials", "LOI Builder", "Diligence", "Close"];
 
@@ -18,12 +18,30 @@ function NewDealForm() {
   const [name, setName] = useState("");
   const [industry, setIndustry] = useState("");
   const [location, setLocation] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const createDeal = useCreateDeal();
 
-  const handleSubmit = () => {
+  const handleFile = (f: File) => {
+    if (f.type === "application/pdf" || f.name.endsWith(".pdf")) {
+      setFile(f);
+    } else {
+      toast.error("Please upload a PDF file");
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!name.trim()) return;
-    // In a real app this would create a deal and redirect
-    navigate("/deal/1");
+    try {
+      let cimFilePath: string | undefined;
+      if (file) {
+        cimFilePath = await uploadCIM(file);
+      }
+      const deal = await createDeal.mutateAsync({ name, industry, location, cimFilePath });
+      navigate(`/deal/${deal.id}`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to create deal");
+    }
   };
 
   return (
@@ -73,14 +91,38 @@ function NewDealForm() {
               <div
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => { e.preventDefault(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const f = e.dataTransfer.files[0];
+                  if (f) handleFile(f);
+                }}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".pdf";
+                  input.onchange = (e) => {
+                    const f = (e.target as HTMLInputElement).files?.[0];
+                    if (f) handleFile(f);
+                  };
+                  input.click();
+                }}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  isDragging ? "border-primary bg-surface-1" : "border-border hover:border-muted-foreground hover:bg-surface-1"
+                  isDragging ? "border-primary bg-surface-1" : file ? "border-primary/50 bg-surface-1" : "border-border hover:border-muted-foreground hover:bg-surface-1"
                 }`}
               >
                 <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-foreground mb-0.5">Drop your CIM here</p>
-                <p className="text-xs text-muted-foreground">PDF, up to 50MB</p>
+                {file ? (
+                  <>
+                    <p className="text-sm font-medium text-foreground mb-0.5">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-foreground mb-0.5">Drop your CIM here</p>
+                    <p className="text-xs text-muted-foreground">PDF, up to 20MB</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -94,11 +136,20 @@ function NewDealForm() {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!name.trim()}
+              disabled={!name.trim() || createDeal.isPending}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
             >
-              Create Deal & Analyze
-              <ArrowRight className="w-3.5 h-3.5" />
+              {createDeal.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  Create Deal & Analyze
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
         </motion.div>
@@ -116,7 +167,15 @@ const DealPage = () => {
     return <NewDealForm />;
   }
 
-  const deal: Deal | undefined = mockDeals.find((d) => d.id === id);
+  const { data: deal, isLoading } = useDeal(id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!deal) {
     return (

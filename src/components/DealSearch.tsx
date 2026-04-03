@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockDeals } from "@/data/mockDeals";
+import { useDeals } from "@/hooks/useDeals";
+import { formatCurrency } from "@/data/mockDeals";
 import {
   CommandDialog,
   CommandEmpty,
@@ -10,6 +10,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { CheckCircle2, AlertTriangle, XCircle, Loader2, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const verdictIcons: Record<string, React.ReactNode> = {
   strong: <CheckCircle2 className="w-3.5 h-3.5 text-verdict-positive" />,
@@ -20,6 +21,7 @@ const verdictIcons: Record<string, React.ReactNode> = {
 export function DealSearch() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { data: deals = [] } = useDeals();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -54,7 +56,7 @@ export function DealSearch() {
         <CommandList>
           <CommandEmpty>No deals found.</CommandEmpty>
           <CommandGroup heading="Deals">
-            {mockDeals.map((deal) => (
+            {deals.map((deal) => (
               <CommandItem
                 key={deal.id}
                 value={`${deal.name} ${deal.industry} ${deal.location}`}

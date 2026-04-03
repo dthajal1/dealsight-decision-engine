@@ -1,9 +1,18 @@
-import { mockDeals, formatCurrency } from "@/data/mockDeals";
+import { useDeals } from "@/hooks/useDeals";
+import { formatCurrency } from "@/data/mockDeals";
 import { motion } from "framer-motion";
-import { TrendingUp, DollarSign, AlertCircle, BarChart3 } from "lucide-react";
+import { TrendingUp, DollarSign, AlertCircle, BarChart3, Loader2 } from "lucide-react";
 
 const Index = () => {
-  const deals = mockDeals;
+  const { data: deals = [], isLoading } = useDeals();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const totalDeals = deals.length;
   const reviewedDeals = deals.filter((d) => d.status === "reviewed");
@@ -12,8 +21,9 @@ const Index = () => {
   const passCount = deals.filter((d) => d.verdict === "pass").length;
   const analyzingCount = deals.filter((d) => d.status === "analyzing").length;
 
-  const totalRevenue = deals.reduce((sum, d) => sum + (d.revenue ?? 0), 0);
-  const avgRevenue = totalRevenue / deals.filter((d) => d.revenue).length || 0;
+  const dealsWithRevenue = deals.filter((d) => d.revenue);
+  const totalRevenue = dealsWithRevenue.reduce((sum, d) => sum + (d.revenue ?? 0), 0);
+  const avgRevenue = dealsWithRevenue.length > 0 ? totalRevenue / dealsWithRevenue.length : 0;
 
   const totalValuationLow = reviewedDeals.reduce((sum, d) => sum + (d.valuationLow ?? 0), 0);
   const totalValuationHigh = reviewedDeals.reduce((sum, d) => sum + (d.valuationHigh ?? 0), 0);
@@ -33,8 +43,8 @@ const Index = () => {
     },
     {
       label: "Avg Revenue",
-      value: formatCurrency(avgRevenue),
-      sub: `${formatCurrency(totalRevenue)} total across ${deals.filter((d) => d.revenue).length} deals`,
+      value: avgRevenue > 0 ? formatCurrency(avgRevenue) : "—",
+      sub: dealsWithRevenue.length > 0 ? `${formatCurrency(totalRevenue)} total across ${dealsWithRevenue.length} deals` : "No revenue data yet",
       icon: TrendingUp,
     },
     {
@@ -61,7 +71,6 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statCards.map((stat, i) => (
             <motion.div
@@ -81,7 +90,6 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Verdict Breakdown */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +114,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Simple bar */}
           {totalDeals > 0 && (
             <div className="flex h-2 rounded-full overflow-hidden mt-4 bg-surface-1">
               {strongCount > 0 && (

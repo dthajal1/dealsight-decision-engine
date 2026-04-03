@@ -1,7 +1,7 @@
-import { LayoutDashboard, Plus, Settings, CheckCircle2, AlertTriangle, XCircle, Loader2, FileText } from "lucide-react";
+import { LayoutDashboard, Plus, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
-import { mockDeals } from "@/data/mockDeals";
+import { useDeals } from "@/hooks/useDeals";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
+  const { data: deals = [] } = useDeals();
 
   return (
     <Sidebar collapsible="icon">
@@ -67,7 +68,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">Deals</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {mockDeals.map((deal) => (
+              {deals.map((deal) => (
                 <SidebarMenuItem key={deal.id}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -75,10 +76,9 @@ export function AppSidebar() {
                       className="hover:bg-sidebar-accent/50"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
-                      {/* Verdict dot */}
                       <span className={`shrink-0 w-2 h-2 rounded-full mr-2 ${
                         deal.verdict
-                          ? verdictDot[deal.verdict]
+                          ? verdictDot[deal.verdict] || "bg-border"
                           : deal.status === "analyzing"
                           ? "bg-muted-foreground animate-pulse"
                           : "bg-border"
