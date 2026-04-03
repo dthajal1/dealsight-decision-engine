@@ -66,20 +66,6 @@ export const mockDeals: Deal[] = [
     revenue: 890000,
     industry: "Digital Marketing",
   },
-  {
-    id: "4",
-    name: "Plumbing Co.",
-    location: "FL",
-    status: "new",
-    industry: "Plumbing Services",
-  },
-  {
-    id: "5",
-    name: "Dental Practice",
-    location: "OH",
-    status: "new",
-    industry: "Healthcare / Dental",
-  },
 ];
 
 export const formatCurrency = (value: number): string => {
