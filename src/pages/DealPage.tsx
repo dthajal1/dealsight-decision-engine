@@ -45,19 +45,11 @@ const DealPage = () => {
   return (
     <div className="bg-background min-h-screen">
       <div className="max-w-4xl mx-auto px-6 py-6">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => navigate("/")}
-            className="p-1.5 rounded-md hover:bg-surface-1 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">{deal.name}</h1>
-            {deal.industry && (
-              <p className="text-xs text-muted-foreground">{deal.industry} · {deal.location}</p>
-            )}
-          </div>
+        <div className="mb-4">
+          <h1 className="text-base font-semibold text-foreground">{deal.name}</h1>
+          {deal.industry && (
+            <p className="text-xs text-muted-foreground">{deal.industry} · {deal.location}</p>
+          )}
         </div>
         <div className="mb-6">
           <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={deal.status === "reviewed"} />
