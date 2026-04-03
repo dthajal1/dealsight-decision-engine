@@ -101,13 +101,15 @@ function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; o
       console.log("[QoE] Combined CSV length:", combinedCsv.length);
       console.log("[QoE] Asking price:", askingPrice);
 
-      const formData = new FormData();
-      formData.append("csvData", combinedCsv);
-      formData.append("askingPrice", askingPrice);
+      console.log("[QoE] Sending as JSON to:", QOE_WEBHOOK);
 
       const resp = await fetch(QOE_WEBHOOK, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          csvData: combinedCsv,
+          askingPrice: Number(askingPrice),
+        }),
       });
 
       console.log("[QoE] Response status:", resp.status);
