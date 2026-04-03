@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deals: {
+        Row: {
+          cim_file_path: string | null
+          created_at: string
+          employees: number | null
+          id: string
+          industry: string | null
+          location: string | null
+          name: string
+          net_income: number | null
+          next_steps: Json | null
+          recurring_revenue_pct: number | null
+          revenue: number | null
+          risks: Json | null
+          status: string
+          summary: string | null
+          updated_at: string
+          valuation_high: number | null
+          valuation_low: number | null
+          verdict: string | null
+          year_established: number | null
+        }
+        Insert: {
+          cim_file_path?: string | null
+          created_at?: string
+          employees?: number | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          name: string
+          net_income?: number | null
+          next_steps?: Json | null
+          recurring_revenue_pct?: number | null
+          revenue?: number | null
+          risks?: Json | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          valuation_high?: number | null
+          valuation_low?: number | null
+          verdict?: string | null
+          year_established?: number | null
+        }
+        Update: {
+          cim_file_path?: string | null
+          created_at?: string
+          employees?: number | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          name?: string
+          net_income?: number | null
+          next_steps?: Json | null
+          recurring_revenue_pct?: number | null
+          revenue?: number | null
+          risks?: Json | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          valuation_high?: number | null
+          valuation_low?: number | null
+          verdict?: string | null
+          year_established?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
