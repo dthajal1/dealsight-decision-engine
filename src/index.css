@@ -7,61 +7,62 @@
 @layer base {
   :root {
     --background: 40 20% 98%;
-    --foreground: 220 20% 10%;
+    --foreground: 220 15% 12%;
 
-    --card: 40 20% 99%;
-    --card-foreground: 220 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 15% 12%;
 
-    --primary: 220 20% 10%;
+    --primary: 220 15% 12%;
     --primary-foreground: 40 20% 98%;
 
-    --secondary: 36 14% 93%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 36 12% 93%;
+    --secondary-foreground: 220 15% 12%;
 
-    --muted: 36 14% 95%;
-    --muted-foreground: 220 8% 50%;
+    --muted: 36 10% 95%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 36 14% 93%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 36 12% 93%;
+    --accent-foreground: 220 15% 12%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 36 14% 90%;
-    --input: 36 14% 90%;
-    --ring: 220 20% 10%;
+    --border: 220 10% 90%;
+    --input: 220 10% 90%;
+    --ring: 220 15% 12%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
     /* Semantic verdict colors */
-    --verdict-positive: 152 60% 36%;
-    --verdict-positive-bg: 152 60% 95%;
-    --verdict-positive-foreground: 152 60% 20%;
+    --verdict-positive: 152 55% 34%;
+    --verdict-positive-bg: 152 40% 95%;
+    --verdict-positive-foreground: 152 55% 20%;
 
-    --verdict-caution: 38 92% 50%;
-    --verdict-caution-bg: 38 92% 95%;
-    --verdict-caution-foreground: 38 70% 25%;
+    --verdict-caution: 38 85% 48%;
+    --verdict-caution-bg: 38 60% 95%;
+    --verdict-caution-foreground: 38 65% 25%;
 
-    --verdict-negative: 0 72% 51%;
-    --verdict-negative-bg: 0 72% 96%;
-    --verdict-negative-foreground: 0 72% 30%;
+    --verdict-negative: 0 65% 50%;
+    --verdict-negative-bg: 0 50% 96%;
+    --verdict-negative-foreground: 0 65% 30%;
 
     /* Surface layers */
     --surface-0: 40 20% 98%;
-    --surface-1: 40 15% 96%;
-    --surface-2: 36 14% 93%;
+    --surface-1: 220 10% 96%;
+    --surface-2: 220 10% 93%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar — same hue family as the rest */
+    --sidebar-background: 220 10% 97%;
+    --sidebar-foreground: 220 15% 12%;
+    --sidebar-primary: 220 15% 12%;
+    --sidebar-primary-foreground: 40 20% 98%;
+    --sidebar-accent: 220 10% 93%;
+    --sidebar-accent-foreground: 220 15% 12%;
+    --sidebar-border: 220 10% 90%;
+    --sidebar-ring: 220 15% 12%;
   }
 }
 
@@ -73,7 +74,15 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Consistent typography scale */
+  h1 { @apply text-base font-semibold tracking-tight; }
+  h2 { @apply text-sm font-semibold tracking-tight; }
+  h3 { @apply text-xs font-semibold; }
 }
 
 @layer utilities {
