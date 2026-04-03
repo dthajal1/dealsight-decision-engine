@@ -5,6 +5,7 @@ import { StepNavigation } from "@/components/deal/StepNavigation";
 import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
 import { GenericStepResults } from "@/components/deal/GenericStepResults";
 import { StepUploadZone } from "@/components/deal/StepUploadZone";
+import { QoEDashboard } from "@/components/deal/QoEDashboard";
 import { analyzeCIM, analyzeNDA, analyzeFinancePacket, generateLOI, analyzeQoE, analyzeAgreement } from "@/services/n8nWebhooks";
 import { DEMO_CIM_RESPONSE } from "@/data/demoData";
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
