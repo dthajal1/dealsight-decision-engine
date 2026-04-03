@@ -1,28 +1,28 @@
 import { useState } from "react";
 import { mockDeals } from "@/data/mockDeals";
-import { PipelineColumn } from "@/components/PipelineColumn";
+import { DealCard } from "@/components/DealCard";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { DealStatus } from "@/types/deal";
 
 const Index = () => {
   const [deals] = useState(mockDeals);
   const navigate = useNavigate();
 
-  const grouped = {
-    new: deals.filter((d) => d.status === "new"),
-    analyzing: deals.filter((d) => d.status === "analyzing"),
-    reviewed: deals.filter((d) => d.status === "reviewed"),
-  };
-
   const isEmpty = deals.length === 0;
+
+  const totalDeals = deals.length;
+  const strongCount = deals.filter((d) => d.verdict === "strong").length;
+  const cautionCount = deals.filter((d) => d.verdict === "caution").length;
+  const passCount = deals.filter((d) => d.verdict === "pass").length;
+  const analyzingCount = deals.filter((d) => d.status === "analyzing").length;
+  const pendingCount = deals.filter((d) => d.status === "new").length;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">DealSight</h1>
             <p className="text-xs text-muted-foreground">AI-powered deal analysis</p>
@@ -37,7 +37,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-6 py-8">
         {isEmpty ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -60,11 +60,57 @@ const Index = () => {
             </button>
           </motion.div>
         ) : (
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {(["new", "analyzing", "reviewed"] as DealStatus[]).map((status) => (
-              <PipelineColumn key={status} status={status} deals={grouped[status]} />
-            ))}
-          </div>
+          <>
+            {/* Summary Stats Bar */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-6 mb-8 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Deals</span>
+                <span className="font-semibold text-foreground">{totalDeals}</span>
+              </div>
+              <div className="w-px h-4 bg-border" />
+              {strongCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-verdict-positive" />
+                  <span className="text-muted-foreground">{strongCount} Strong</span>
+                </div>
+              )}
+              {cautionCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-verdict-caution" />
+                  <span className="text-muted-foreground">{cautionCount} Caution</span>
+                </div>
+              )}
+              {passCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-verdict-negative" />
+                  <span className="text-muted-foreground">{passCount} Pass</span>
+                </div>
+              )}
+              {analyzingCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse" />
+                  <span className="text-muted-foreground">{analyzingCount} Analyzing</span>
+                </div>
+              )}
+              {pendingCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-border" />
+                  <span className="text-muted-foreground">{pendingCount} Pending</span>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Card Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {deals.map((deal, i) => (
+                <DealCard key={deal.id} deal={deal} index={i} />
+              ))}
+            </div>
+          </>
         )}
       </main>
     </div>
