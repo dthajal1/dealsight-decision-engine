@@ -217,8 +217,22 @@ function DealView() {
     updateStep(stepIndex, { loading: true, error: null, file });
     try {
       const result = await apiFn(file);
+      if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
+        console.warn("[DealPage] Empty API response — falling back to demo data");
+        if (stepIndex === 0) {
+          updateStep(stepIndex, { data: DEMO_CIM_RESPONSE, loading: false });
+          toast.info("API returned empty response — showing demo data");
+          return;
+        }
+      }
       updateStep(stepIndex, { data: result, loading: false });
     } catch (e: any) {
+      if (stepIndex === 0) {
+        console.warn("[DealPage] API error — falling back to demo data:", e.message);
+        updateStep(stepIndex, { data: DEMO_CIM_RESPONSE, loading: false });
+        toast.info("API unavailable — showing demo data");
+        return;
+      }
       updateStep(stepIndex, { loading: false, error: e.message || "Unknown error" });
     }
   }, [updateStep]);

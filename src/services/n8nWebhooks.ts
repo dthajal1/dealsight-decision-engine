@@ -60,7 +60,8 @@ async function postWebhook<T = any>(url: string, body: Record<string, any>): Pro
     }
 
     if (!text || text.trim() === "") {
-      throw new Error("Webhook returned an empty response. Check your n8n workflow.");
+      console.warn("[n8n] Empty response — returning null to trigger demo fallback");
+      return null as T;
     }
 
     // Parse the JSON directly — n8n returns valid JSON
