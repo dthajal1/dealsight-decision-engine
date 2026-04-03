@@ -4,8 +4,9 @@ import { Upload, Loader2, CheckCircle2, AlertTriangle, XCircle, RotateCcw } from
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const QOE_WEBHOOK = "https://silmuio.app.n8n.cloud/webhook/qoe-analysis";
+const QOE_FUNCTION = "qoe-analysis";
 
 // ── Helpers ──
 
@@ -49,6 +50,28 @@ function arColor(level: string): string {
   if (l === "HIGH") return "bg-destructive text-destructive-foreground";
   if (l === "MEDIUM") return "bg-verdict-caution text-verdict-caution-foreground";
   return "bg-verdict-positive text-verdict-positive-foreground";
+}
+
+async function getFunctionErrorMessage(error: unknown): Promise<string> {
+  if (error instanceof Error) {
+    if (typeof error === "object" && error !== null && "context" in error && error.context instanceof Response) {
+      const text = await error.context.text();
+      console.error("[QoE] Function error response:", error.context.status, text);
+
+      if (text) {
+        try {
+          const parsed = JSON.parse(text);
+          if (typeof parsed?.error === "string") return parsed.error;
+        } catch {
+          return text;
+        }
+      }
+    }
+
+    return error.message;
+  }
+
+  return "Unknown error";
 }
 
 function Section({ title, delay = 0, children }: { title: string; delay?: number; children: React.ReactNode }) {
@@ -100,37 +123,29 @@ function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; o
       console.log("[QoE] Files:", files.map(f => f.name));
       console.log("[QoE] Combined CSV length:", combinedCsv.length);
       console.log("[QoE] Asking price:", askingPrice);
+      console.log("[QoE] Calling backend function:", QOE_FUNCTION);
 
-      console.log("[QoE] Sending as JSON to:", QOE_WEBHOOK);
-
-      const resp = await fetch(QOE_WEBHOOK, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke(QOE_FUNCTION, {
+        body: {
           csvData: combinedCsv,
           askingPrice: Number(askingPrice),
-        }),
+        },
       });
 
-      console.log("[QoE] Response status:", resp.status);
-      const text = await resp.text();
-      console.log("[QoE] Raw response length:", text.length);
-      console.log("[QoE] Raw response preview:", text.slice(0, 300));
-
-      if (!resp.ok) {
-        throw new Error(`Request failed: ${resp.status} - ${text.slice(0, 200)}`);
+      if (error) {
+        throw new Error(await getFunctionErrorMessage(error));
       }
 
-      if (!text || text.trim() === "") {
-        throw new Error("Webhook returned an empty response");
+      console.log("[QoE] Function response:", data);
+
+      if (!data) {
+        throw new Error("Analysis service returned no data");
       }
 
-      const data = JSON.parse(text);
-      console.log("[QoE] Parsed data:", data);
       onResult(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[QoE] Error:", e);
-      onError(e.message || "Unknown error");
+      onError(await getFunctionErrorMessage(e));
     } finally {
       setLoading(false);
     }
