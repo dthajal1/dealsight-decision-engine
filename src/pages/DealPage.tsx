@@ -54,10 +54,6 @@ const DealPage = () => {
           <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={deal.status === "reviewed"} />
         </div>
         {stepContent[activeStep]}
-      </div>
-
-      {/* Floating AI Chat */}
-      <ChatWidget />
     </div>
   );
 };
