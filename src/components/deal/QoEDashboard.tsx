@@ -62,32 +62,47 @@ function Section({ title, delay = 0, children }: { title: string; delay?: number
 
 // ── Upload Form ──
 
+function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
 function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; onError: (err: string) => void }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [askingPrice, setAskingPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const addFiles = (newFiles: FileList | File[]) => {
+    const arr = Array.from(newFiles).filter(f => f.name.endsWith(".csv"));
+    if (arr.length === 0) { toast.error("Only .csv files are accepted"); return; }
+    setFiles(prev => [...prev, ...arr]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
-    if (!file || !askingPrice) {
-      toast.error("Please provide both a CSV file and asking price");
+    if (files.length === 0 || !askingPrice) {
+      toast.error("Please provide at least one CSV file and asking price");
       return;
     }
 
     setLoading(true);
     try {
-      // Read CSV as text
-      const csvText = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsText(file);
-      });
+      const csvTexts = await Promise.all(files.map(readFileAsText));
+      const combinedCsv = csvTexts.join("\n");
 
-      console.log("[QoE] CSV length:", csvText.length);
+      console.log("[QoE] Files:", files.map(f => f.name));
+      console.log("[QoE] Combined CSV length:", combinedCsv.length);
       console.log("[QoE] Asking price:", askingPrice);
 
       const formData = new FormData();
-      formData.append("csvData", csvText);
+      formData.append("csvData", combinedCsv);
       formData.append("askingPrice", askingPrice);
 
       const resp = await fetch(QOE_WEBHOOK, {
@@ -132,35 +147,43 @@ function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; o
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto space-y-5">
       <div>
-        <label className="block text-xs font-medium text-foreground mb-1.5">QuickBooks Export (.csv)</label>
+        <label className="block text-xs font-medium text-foreground mb-1.5">QuickBooks Exports (.csv)</label>
         <div
           onClick={() => {
             const input = document.createElement("input");
             input.type = "file";
             input.accept = ".csv";
+            input.multiple = true;
             input.onchange = (e) => {
-              const f = (e.target as HTMLInputElement).files?.[0];
-              if (f) setFile(f);
+              const selected = (e.target as HTMLInputElement).files;
+              if (selected) addFiles(selected);
             };
             input.click();
           }}
           className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-            file ? "border-primary/50 bg-primary/5" : "border-border hover:border-muted-foreground hover:bg-muted/30"
+            files.length > 0 ? "border-primary/50 bg-primary/5" : "border-border hover:border-muted-foreground hover:bg-muted/30"
           }`}
         >
           <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-          {file ? (
-            <>
-              <p className="text-sm font-medium text-foreground">{file.name}</p>
-              <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
-            </>
+          {files.length > 0 ? (
+            <p className="text-sm font-medium text-foreground">{files.length} file{files.length > 1 ? "s" : ""} selected</p>
           ) : (
             <>
-              <p className="text-sm text-foreground">Drop CSV file here or click to browse</p>
-              <p className="text-xs text-muted-foreground">.csv files only</p>
+              <p className="text-sm text-foreground">Drop CSV files here or click to browse</p>
+              <p className="text-xs text-muted-foreground">Multiple .csv files supported</p>
             </>
           )}
         </div>
+        {files.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {files.map((f, i) => (
+              <div key={i} className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-1.5">
+                <span className="text-foreground truncate">{f.name} <span className="text-muted-foreground">({(f.size / 1024).toFixed(1)} KB)</span></span>
+                <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-muted-foreground hover:text-destructive ml-2 shrink-0">&times;</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
@@ -176,7 +199,7 @@ function QoEUploadForm({ onResult, onError }: { onResult: (data: any) => void; o
 
       <button
         onClick={handleSubmit}
-        disabled={!file || !askingPrice}
+        disabled={files.length === 0 || !askingPrice}
         className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         Run Analysis
