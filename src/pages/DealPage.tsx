@@ -6,9 +6,11 @@ import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
 import { GenericStepResults } from "@/components/deal/GenericStepResults";
 import { StepUploadZone } from "@/components/deal/StepUploadZone";
 import { QoEDashboard } from "@/components/deal/QoEDashboard";
-import { analyzeCIM, analyzeNDA, analyzeFinancePacket, generateLOI, analyzeQoE, analyzeAgreement } from "@/services/n8nWebhooks";
 import { DEMO_CIM_RESPONSE } from "@/data/demoData";
+import { DEMO_FINANCIALS_RESPONSE, DEMO_LOI_RESPONSE, DEMO_CLOSE_RESPONSE } from "@/data/demoStepData";
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
