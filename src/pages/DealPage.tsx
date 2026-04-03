@@ -5,6 +5,7 @@ import { StepNavigation } from "@/components/deal/StepNavigation";
 import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
 import { GenericStepResults } from "@/components/deal/GenericStepResults";
 import { StepUploadZone } from "@/components/deal/StepUploadZone";
+import { QoEDashboard } from "@/components/deal/QoEDashboard";
 import { analyzeCIM, analyzeNDA, analyzeFinancePacket, generateLOI, analyzeQoE, analyzeAgreement } from "@/services/n8nWebhooks";
 import { DEMO_CIM_RESPONSE } from "@/data/demoData";
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
@@ -351,17 +352,7 @@ function DealView() {
         return null;
 
       case 3: // Diligence / QoE
-        if (s.data) return <GenericStepResults data={s.data} title="Quality of Earnings Analysis" />;
-        return (
-          <StepUploadZone
-            label="Upload QoE Report"
-            description="PDF document for diligence review"
-            isLoading={s.loading}
-            error={s.error}
-            onUpload={(file) => handleStepUpload(3, file, analyzeQoE)}
-            onRetry={handleRetry}
-          />
-        );
+        return <QoEDashboard />;
 
       case 4: // Close / Agreement
         if (s.data) return <GenericStepResults data={s.data} title="Agreement Review Complete" />;
