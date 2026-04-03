@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const QOE_WEBHOOK = "https://silmuio.app.n8n.cloud/webhook/qoe-analysis";
+const QOE_WEBHOOK = "https://silmuio.app.n8n.cloud/webhook/84b0e808-5789-42e0-bce8-3754b44fa162";
 const TIMEOUT_MS = 30_000;
 
 function jsonResponse(status: number, body: unknown) {
