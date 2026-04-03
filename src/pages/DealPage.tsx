@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDeal, useCreateDeal, uploadCIM } from "@/hooks/useDeals";
 import { StepNavigation } from "@/components/deal/StepNavigation";
 import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
 import { GenericStepResults } from "@/components/deal/GenericStepResults";
-import { StepUploadZone } from "@/components/deal/StepUploadZone";
 import { QoEDashboard } from "@/components/deal/QoEDashboard";
 import { DEMO_CIM_RESPONSE } from "@/data/demoData";
 import { DEMO_FINANCIALS_RESPONSE, DEMO_LOI_RESPONSE, DEMO_CLOSE_RESPONSE } from "@/data/demoStepData";
