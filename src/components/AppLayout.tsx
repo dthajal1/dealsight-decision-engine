@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DealSearch } from "@/components/DealSearch";
 import { ChatSidebar } from "@/components/ChatSidebar";
+import { Sparkles } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const [chatOpen, setChatOpen] = useState(false);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -13,10 +17,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="text-muted-foreground" />
             <div className="flex items-center gap-2">
               <DealSearch />
-              <ChatSidebar />
+              <button
+                onClick={() => setChatOpen((v) => !v)}
+                className={`p-1.5 rounded-md transition-colors ${chatOpen ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"}`}
+                title="AI Assistant"
+              >
+                <Sparkles className="w-4 h-4" />
+              </button>
             </div>
           </header>
-          <main className="flex-1">{children}</main>
+          <div className="flex-1 flex min-h-0">
+            <main className="flex-1 overflow-y-auto">{children}</main>
+            <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} />
+          </div>
         </div>
       </div>
     </SidebarProvider>
