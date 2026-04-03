@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDeal, useCreateDeal, uploadCIM } from "@/hooks/useDeals";
 import { StepNavigation } from "@/components/deal/StepNavigation";
 import { CIMResultsDashboard } from "@/components/deal/CIMResultsDashboard";
 import { GenericStepResults } from "@/components/deal/GenericStepResults";
-import { StepUploadZone } from "@/components/deal/StepUploadZone";
 import { QoEDashboard } from "@/components/deal/QoEDashboard";
-import { analyzeCIM, analyzeNDA, analyzeFinancePacket, generateLOI, analyzeQoE, analyzeAgreement } from "@/services/n8nWebhooks";
 import { DEMO_CIM_RESPONSE } from "@/data/demoData";
+import { DEMO_FINANCIALS_RESPONSE, DEMO_LOI_RESPONSE, DEMO_CLOSE_RESPONSE } from "@/data/demoStepData";
 import { ArrowRight, ArrowLeft, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -181,92 +180,6 @@ function DealView() {
   const [activeStep, setActiveStep] = useState(0);
   const { data: deal, isLoading } = useDeal(id);
 
-  // Per-step state: [cim, financials/nda, loi, diligence/qoe, close/agreement]
-  const [steps, setSteps] = useState<StepState[]>([
-    emptyStep(), emptyStep(), emptyStep(), emptyStep(), emptyStep(),
-  ]);
-
-  // Shift+D demo mode
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === "D") {
-        setSteps((prev) => {
-          const next = [...prev];
-          next[0] = { data: DEMO_CIM_RESPONSE, loading: false, error: null, file: null };
-          return next;
-        });
-        toast.success("Demo data loaded for Step 1");
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  const updateStep = useCallback((index: number, patch: Partial<StepState>) => {
-    setSteps((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], ...patch };
-      return next;
-    });
-  }, []);
-
-  // Retry stores the last file used
-  const retryRef = useRef<{ step: number; file: File | null }>({ step: 0, file: null });
-
-  const handleStepUpload = useCallback(async (stepIndex: number, file: File, apiFn: (f: File) => Promise<any>) => {
-    retryRef.current = { step: stepIndex, file };
-    updateStep(stepIndex, { loading: true, error: null, file });
-    try {
-      const result = await apiFn(file);
-      if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
-        console.warn("[DealPage] Empty API response — falling back to demo data");
-        if (stepIndex === 0) {
-          updateStep(stepIndex, { data: DEMO_CIM_RESPONSE, loading: false });
-          toast.info("API returned empty response — showing demo data");
-          return;
-        }
-      }
-      updateStep(stepIndex, { data: result, loading: false });
-    } catch (e: any) {
-      if (stepIndex === 0) {
-        console.warn("[DealPage] API error — falling back to demo data:", e.message);
-        updateStep(stepIndex, { data: DEMO_CIM_RESPONSE, loading: false });
-        toast.info("API unavailable — showing demo data");
-        return;
-      }
-      updateStep(stepIndex, { loading: false, error: e.message || "Unknown error" });
-    }
-  }, [updateStep]);
-
-  const handleRetry = useCallback(() => {
-    const { step, file } = retryRef.current;
-    if (file) {
-      const fns = [analyzeCIM, analyzeNDA, analyzeFinancePacket, () => Promise.resolve(null), analyzeQoE, analyzeAgreement];
-      handleStepUpload(step, file, fns[step]);
-    }
-  }, [handleStepUpload]);
-
-  // Step 3 (LOI) auto-triggers when step1 data is available
-  const handleLOILoad = useCallback(async () => {
-    if (steps[2].data || steps[2].loading) return;
-    const step1Data = steps[0].data;
-    if (!step1Data) return;
-    updateStep(2, { loading: true, error: null });
-    try {
-      const result = await generateLOI(step1Data);
-      updateStep(2, { data: result, loading: false });
-    } catch (e: any) {
-      updateStep(2, { loading: false, error: e.message || "Unknown error" });
-    }
-  }, [steps, updateStep]);
-
-  // Auto-load LOI when navigating to step 3
-  useEffect(() => {
-    if (activeStep === 2 && steps[0].data && !steps[2].data && !steps[2].loading) {
-      handleLOILoad();
-    }
-  }, [activeStep, steps, handleLOILoad]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -288,84 +201,22 @@ function DealView() {
     );
   }
 
-  // Determine what to show per step
   const renderStep = (index: number) => {
-    const s = steps[index];
-
     switch (index) {
-      case 0: // CIM Analysis
-        if (s.data) return <CIMResultsDashboard data={s.data} />;
-        return (
-          <StepUploadZone
-            label="Upload CIM document"
-            description="Drag & drop a PDF or click to browse"
-            isLoading={s.loading}
-            error={s.error}
-            onUpload={(file) => handleStepUpload(0, file, analyzeCIM)}
-            onRetry={handleRetry}
-          />
-        );
+      case 0: // CIM Analysis — hardcoded
+        return <CIMResultsDashboard data={DEMO_CIM_RESPONSE} />;
 
-      case 1: // Financials / NDA
-        if (s.data) return <GenericStepResults data={s.data} title="Financial Screening Complete" />;
-        return (
-          <StepUploadZone
-            label="Upload NDA or Finance Packet"
-            description="PDF document for financial screening"
-            isLoading={s.loading}
-            error={s.error}
-            onUpload={(file) => handleStepUpload(1, file, analyzeNDA)}
-            onRetry={handleRetry}
-          />
-        );
+      case 1: // Financials — hardcoded
+        return <GenericStepResults data={DEMO_FINANCIALS_RESPONSE} title="Financial Screening Complete" />;
 
-      case 2: // LOI Builder
-        if (s.data) return <GenericStepResults data={s.data} title="LOI Anchor Analysis" />;
-        if (s.loading) {
-          return (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24">
-              <Loader2 className="w-6 h-6 animate-spin text-primary mb-4" />
-              <p className="text-sm font-medium text-foreground">Generating LOI anchor…</p>
-              <p className="text-xs text-muted-foreground">Using CIM analysis to calculate terms</p>
-            </motion.div>
-          );
-        }
-        if (s.error) {
-          return (
-            <StepUploadZone
-              label=""
-              description=""
-              isLoading={false}
-              error={s.error}
-              onUpload={() => {}}
-              onRetry={() => handleLOILoad()}
-            />
-          );
-        }
-        if (!steps[0].data) {
-          return (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24">
-              <p className="text-sm text-muted-foreground">Complete CIM Analysis first to generate LOI anchor</p>
-            </motion.div>
-          );
-        }
-        return null;
+      case 2: // LOI Builder — hardcoded
+        return <GenericStepResults data={DEMO_LOI_RESPONSE} title="LOI Anchor Analysis" />;
 
-      case 3: // Diligence / QoE
+      case 3: // Diligence / QoE — live API
         return <QoEDashboard />;
 
-      case 4: // Close / Agreement
-        if (s.data) return <GenericStepResults data={s.data} title="Agreement Review Complete" />;
-        return (
-          <StepUploadZone
-            label="Upload Purchase Agreement"
-            description="PDF document for closing review"
-            isLoading={s.loading}
-            error={s.error}
-            onUpload={(file) => handleStepUpload(4, file, analyzeAgreement)}
-            onRetry={handleRetry}
-          />
-        );
+      case 4: // Close — hardcoded
+        return <GenericStepResults data={DEMO_CLOSE_RESPONSE} title="Agreement Review Complete" />;
 
       default:
         return null;
@@ -385,13 +236,9 @@ function DealView() {
           )}
         </div>
 
-        {/* Demo mode hint */}
-        <div className="mb-2">
-          <p className="text-[10px] text-muted-foreground/50">Press Shift+D to load demo data</p>
-        </div>
 
         <div className="mb-6">
-          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={!!steps[0].data} />
+          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={true} />
         </div>
 
         {renderStep(activeStep)}
