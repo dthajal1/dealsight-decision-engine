@@ -237,13 +237,9 @@ function DealView() {
           )}
         </div>
 
-        {/* Demo mode hint */}
-        <div className="mb-2">
-          <p className="text-[10px] text-muted-foreground/50">Press Shift+D to load demo data</p>
-        </div>
 
         <div className="mb-6">
-          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={!!steps[0].data} />
+          <StepNavigation activeStep={activeStep} onStepChange={setActiveStep} hasResults={true} />
         </div>
 
         {renderStep(activeStep)}
